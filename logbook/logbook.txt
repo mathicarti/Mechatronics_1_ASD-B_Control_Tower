@@ -1,0 +1,20 @@
+Use this file to keep your log (see assignment instructions above).
+Make sure to include check point numbers for each entry!
+
+Sunday 20/09/26:
+Read through the assignment criteria outline.
+---Rough Plan--- Made by me :)
+1: Design the data model ~ Linked list with the latest position of aircraft (one per struct)
+2:         Input Parsing ~ Read ADS-B line by line, and parse it, same for *time... input
+3:        Basic Requests ~ Complete "Basic Requests" section
+4:   Separation Checking ~ Complete "Separation Checking" section
+5:    Check Memory Leaks ~ Make sure no memory leaks are present so far
+6:    Test Case Checking ~ Check that all the test cases pass
+7:          Code Quality ~ Clean up code and quality control it
+
+Tuesday 22/09/26:
+Started the implementation of step 1 and 2
+Both times (closing) and ADS-B parsing are working for a single input.
+Next for step 2:
+- Need to make funcs for each and implement a loop to keep reading data in until a close
+- Actully sort ADS-B data into an linked list and convert time
