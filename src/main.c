@@ -5,8 +5,6 @@
 
 #include "message.h"
 
-Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id);
-
 int main(void) 
 {
 	// Get input from terminal and 'clean it'

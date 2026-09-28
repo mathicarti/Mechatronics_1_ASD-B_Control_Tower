@@ -38,9 +38,13 @@ typedef struct
 } Time_Request;
 
 double convert_to_time(const int hours, const int minutes);
+
 void parse_time_request(Time_Request *request, char *input);
 void parse_ADSB_request(ADSBPacket *packet, const char *input);
+
 void add_packet_node(const ADSBPacket packet, Packet_Node **packet_node_head);
 void free_packet_node(Packet_Node *packet_node_head);
+
+Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id);
 
 #endif
