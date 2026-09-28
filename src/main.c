@@ -5,64 +5,57 @@
 
 #include "message.h"
 
-#define INPUT_BUFFER_SIZE 1024
-
-void print_nodes(Packet_Node *packet_nodes)
-{
-	Packet_Node *head = packet_nodes;
-	
-	while (head)
-	{
-		/* 
-		printf("ID: %d\nTime: %lf\nNorth: %lf\nEast: %lf\nAltitude: %d\nHead: %lf\nSpeed: %lf\n", packet.id, 
-		packet.time, packet.north, packet.east, packet.altitude, packet.heading, 
-		packet.speed); 
-		*/
-		printf("Aircraft ID: %d\n", head->packet.id);
-		head = head->next;
-	}
-}
+Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id);
 
 int main(void) 
 {
 	// Get input from terminal and 'clean it'
 	char input_buffer[INPUT_BUFFER_SIZE];
 
-	Packet_Node *packet_nodes_head = NULL;
+	Packet_Node *packet_node_head = NULL;
 
 	while (fgets(input_buffer, INPUT_BUFFER_SIZE, stdin) != NULL)
 	{
 		input_buffer[strlen(input_buffer) - 1] = '\0';
-
-		// Check the type of data that was inputed (ADS-B or *time)
+		
+		// Check the type of data that was inputted (ADS-B or *time)
 		if (input_buffer[0] == '*')
 		{
 			// Should just sort the *time into an structure and then just process it afterwards
-			Time_Request request;
+			Time_Request request = {0};
 			parse_time_request(&request, input_buffer);
+
+			Packet_Node *request_node_buffer = get_packet_node(packet_node_head, request.aircraft_id);
 
 			switch (request.request_ID)
 			{
 				case CLOSING:
 					printf("closing\n");
+					free_packet_node(packet_node_head);
 					return 0;
 				
 				case EST_POS:
-					printf("checking position of plane ID: %d\n", request.aircraft_id);
+					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.aircraft_id);
+					printf("Found ID: %d with time (minutes): %.1lf\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
+					
 					break;
 				
 				case NUM_CONTACTS:
-					printf("Checking number of contacts\n");
+					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.aircraft_id);
+					printf("Found ID: %d with time (minutes): %.1lf\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
+					
 					break;
 
 				case CHECK_SEPARATION:
-					printf("Cheching separationof of plane ID: %d\n", request.aircraft_id);
+					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.aircraft_id);
+					printf("Found ID: %d with time (minutes): %.1lf\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
+					
 					break;
 
 				case UNDEFINED:
 					printf("Couldn't identify request type\n");
+					free_packet_node(packet_node_head);
 					return 4;
-					break;
 			}
 		}
 		else if (input_buffer[0] == '#')
@@ -70,18 +63,25 @@ int main(void)
 			ADSBPacket packet;
 			parse_ADSB_request(&packet, input_buffer);
 
-			add_packet_node(packet, &packet_nodes_head);
+			Packet_Node *packet_node_buffer = get_packet_node(packet_node_head, packet.id);
+
+			if (!packet_node_buffer)
+				add_packet_node(packet, &packet_node_head);
+			
+			else if (packet_node_buffer->packet.time < packet.time)
+				packet_node_buffer->packet = packet;
+
+			
 		}
 		else
 		{
 			printf("Invalid input\n");
-			break;
-			// return 2;
+			free_packet_node(packet_node_head);
+			return 2;
 		}
 	}
 
-	print_nodes(packet_nodes_head);
-
+	free_packet_node(packet_node_head);
 	return 0;
 }
 
@@ -152,4 +152,27 @@ void add_packet_node(const ADSBPacket packet, Packet_Node **packet_nodes_head)
 	new_packet_node->next = *packet_nodes_head;
 
 	*packet_nodes_head = new_packet_node;
+}
+
+void free_packet_node(Packet_Node *packet_node_head)
+{
+	while(packet_node_head)
+	{
+		Packet_Node *temp = packet_node_head;
+		packet_node_head = packet_node_head->next;
+
+		free(temp);
+	}
+}
+
+Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id)
+{
+	while (packet_node_head)
+	{
+		if (packet_node_head->packet.id == id)
+			return packet_node_head;
+		
+		packet_node_head = packet_node_head->next;
+	}
+	return NULL;
 }
