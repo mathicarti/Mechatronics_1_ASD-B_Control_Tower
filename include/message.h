@@ -6,7 +6,7 @@
 typedef struct 
 {
     int id;
-    double time;
+    int time;
     double north;
     double east;
     int altitude;
@@ -33,11 +33,11 @@ typedef struct
 {
     double time;
     Request_ID request_ID;
-    int aircraft_id;
+    int id;
     double minimum_sep_distance;
 } Time_Request;
 
-double convert_to_time(const int hours, const int minutes);
+int convert_to_time(const int hours, const int minutes);
 
 void parse_time_request(Time_Request *request, char *input);
 void parse_ADSB_request(ADSBPacket *packet, const char *input);

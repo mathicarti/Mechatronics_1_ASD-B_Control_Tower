@@ -25,9 +25,13 @@ Made a git repo so I can code in my IDE
 Monday 28/09/26:
 Worked on the linked list structure and using a custom struct to store plane info.
  - Can now add a link to the list with: void add_packet_node(const ADSBPacket packet, Packet_Node **packet_nodes_head);
+
  - Function: void free_packet_node(Packet_Node *packet_node_head) frees the linked list
+
  - Function: Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id) looks through the list
  and returns the address of the packet_node if its ID was found
+
+ - Added check before adding node to list to check if it exists and is older data, if so update it
 
 Made a new struct and enum (for ease of reading) to sort the *time requests before acting on them
  - Can now parse the inputs with helper functions: void parse_time_request(Time_Request *request, char *input); 

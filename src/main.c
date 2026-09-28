@@ -23,7 +23,7 @@ int main(void)
 			Time_Request request = {0};
 			parse_time_request(&request, input_buffer);
 
-			Packet_Node *request_node_buffer = get_packet_node(packet_node_head, request.aircraft_id);
+			Packet_Node *request_node_buffer = get_packet_node(packet_node_head, request.id);
 
 			switch (request.request_ID)
 			{
@@ -33,20 +33,20 @@ int main(void)
 					return 0;
 				
 				case EST_POS:
-					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.aircraft_id);
-					printf("Found ID: %d with time (minutes): %.1lf\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
+					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.id);
+					printf("Found ID: %d with time (minutes): %d\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
 					
 					break;
 				
 				case NUM_CONTACTS:
-					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.aircraft_id);
-					printf("Found ID: %d with time (minutes): %.1lf\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
+					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.id);
+					printf("Found ID: %d with time (minutes): %d\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
 					
 					break;
 
 				case CHECK_SEPARATION:
-					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.aircraft_id);
-					printf("Found ID: %d with time (minutes): %.1lf\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
+					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.id);
+					printf("Found ID: %d with time (minutes): %d\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
 					
 					break;
 
@@ -68,7 +68,6 @@ int main(void)
 			
 			else if (packet_node_buffer->packet.time < packet.time)
 				packet_node_buffer->packet = packet;
-
 			
 		}
 		else
@@ -83,7 +82,7 @@ int main(void)
 	return 0;
 }
 
-double convert_to_time(const int hours, const int minutes)
+int convert_to_time(const int hours, const int minutes)
 {
 	double total_minutes = hours * 60 + minutes;
 
@@ -122,7 +121,7 @@ void parse_time_request(Time_Request *request, char *input)
 				request->request_ID = UNDEFINED;
 		}
 		else if (i == 2 && request->request_ID != CLOSING && request->request_ID != NUM_CONTACTS)
-			request->aircraft_id = atoi(token);
+			request->id = atoi(token);
 
 		else if (i == 3 && request->request_ID == CHECK_SEPARATION)
 			request->minimum_sep_distance = (double) atof(token);
