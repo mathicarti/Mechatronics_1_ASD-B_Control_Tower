@@ -24,5 +24,10 @@ Made a git repo so I can code in my IDE
 
 Monday 28/09/26:
 Worked on the linked list sructure and using a custom struct to store plane info.
+ - Can now add a link to the list with: void add_packet_node(const ADSBPacket packet, Packet_Node **packet_nodes_head);
+
 Made a new struct and enum (for ease of reading) to sort the *time requests before acting on them
-Made a function to convert hours and minutes to a signle time
+ - Can now parse the inputs with helper functions: void parse_time_request(Time_Request *request, char *input); 
+ and: void parse_ADSB_request(ADSBPacket *packet, const char *input);
+
+Made a function to convert hours and minutes to a single minute time: double convert_to_time(int hours, int minutes)
