@@ -18,3 +18,11 @@ Both times (closing) and ADS-B parsing are working for a single input.
 Next for step 2:
 - Need to make funcs for each and implement a loop to keep reading data in until a close
 - Actully sort ADS-B data into an linked list and convert time
+
+Wednesday 23/09/26:
+Made a git repo so I can code in my IDE
+
+Monday 28/09/26:
+Worked on the linked list sructure and using a custom struct to store plane info.
+Made a new struct and enum (for ease of reading) to sort the *time requests before acting on them
+Made a function to convert hours and minutes to a signle time
