@@ -2,6 +2,8 @@
 #define MESSAGE_H
 
 #define INPUT_BUFFER_SIZE 1024
+#define PI 3.141592653589793
+#define AIRSPACE_RADIUS 350000.0
 
 typedef struct 
 {
@@ -46,5 +48,9 @@ void add_packet_node(const ADSBPacket packet, Packet_Node **packet_node_head);
 void free_packet_node(Packet_Node *packet_node_head);
 
 Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id);
+
+double to_radians(double deg);
+int in_airspace(double pn, double pe);
+int get_est_position(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e);
 
 #endif

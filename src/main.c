@@ -7,11 +7,11 @@
 
 int main(void) 
 {
-	// Get input from terminal and 'clean it'
 	char input_buffer[INPUT_BUFFER_SIZE];
-
+	
 	Packet_Node *packet_node_head = NULL;
-
+	
+	// Get input from terminal and 'clean it'
 	while (fgets(input_buffer, INPUT_BUFFER_SIZE, stdin) != NULL)
 	{
 		input_buffer[strlen(input_buffer) - 1] = '\0';
@@ -33,9 +33,17 @@ int main(void)
 					return 0;
 				
 				case EST_POS:
-					if (!request_node_buffer) printf("Couldn't find ID: %d in list\n", request.id);
-					printf("Found ID: %d with time (minutes): %d\n", request_node_buffer->packet.id, request_node_buffer->packet.time);
-					
+					double est_pos_n, est_pos_e;
+
+					int ret = get_est_position(packet_node_head, request, &est_pos_n, &est_pos_e);
+
+					if (ret != 0)
+					{
+						printf("Aircraft (ID:%i) not currently in area of operation\n", request.id);
+						break;
+					}
+
+					printf("Aircraft (ID:%i): Estimated Position: N:%.1lf,E:%.1lf\n", request.id, est_pos_n, est_pos_e);
 					break;
 				
 				case NUM_CONTACTS:
@@ -172,4 +180,45 @@ Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id)
 		packet_node_head = packet_node_head->next;
 	}
 	return NULL;
+}
+
+double to_radians(double deg)
+{
+	return deg * (PI / 180.0);
+}
+
+// Checks if point (x, y) -> (pn, pe) is within a 350km radius, return 0 if in airspace, 1 if not
+int in_airspace(double pn, double pe)
+{
+	return ((pn * pn) + (pe * pe)) > (AIRSPACE_RADIUS * AIRSPACE_RADIUS);
+}
+
+int get_est_position(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e)
+{
+	// Check if id exists
+	Packet_Node *packet_node;
+
+	if ((packet_node = get_packet_node(packet_node_head, request.id)) == NULL)
+		return 1;
+
+	const ADSBPacket packet = packet_node->packet;
+
+	// Get v_n, v_e and est pos at time t_request
+	double v_n, v_e, pn_t, pe_t;
+
+	v_n = packet.speed * sin(to_radians(packet.heading));
+	v_e = packet.speed * cos(to_radians(packet.heading));
+
+	pn_t = packet.north + v_n * (request.time - packet.time);
+	pe_t = packet.east + v_e * (request.time - packet.time);
+
+	// Check if pn_t || pe_t is in airspace
+	if(in_airspace(pn_t, pe_t))
+		return 2;
+
+	// Return pass and set pointers to pos
+	*est_pos_n = pn_t;
+	*est_pos_e = pe_t;
+
+	return 0;
 }
