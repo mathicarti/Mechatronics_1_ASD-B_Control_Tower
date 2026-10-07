@@ -54,10 +54,14 @@ Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id);
 int handle_time_request(char *input, Packet_Node *packet_node_head);
 void handle_ADSB_packet(char *input, Packet_Node **packet_node_head);
 
-int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head);
-
 int handle_est_pos(Time_Request request, Packet_Node *packet_node_head);
-int get_est_pos(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e);
+int get_est_pos(Time_Request request, Packet_Node *packet_node_head, double *est_pos_n, double *est_pos_e);
+
+int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head);
+int get_num_contacts(Time_Request request, Packet_Node *packet_node_head);
+
+double get_current_north_pos(Time_Request request, Packet_Node *packet_node);
+double get_current_east_pos(Time_Request request, Packet_Node *packet_node);
 int in_airspace(double pn, double pe);
 
 #endif

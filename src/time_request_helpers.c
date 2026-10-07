@@ -36,57 +36,6 @@ int handle_time_request(char *input, Packet_Node *packet_node_head)
     return 0;
 }
 
-int handle_est_pos(Time_Request request, Packet_Node *packet_node_head)
-{
-    double est_pos_n, est_pos_e;
-    int ret = get_est_pos(packet_node_head, request, &est_pos_n, &est_pos_e);
-
-    if (ret != 0)
-    {
-        printf("Aircraft (ID:%i) not currently in area of operation\n", request.id);
-        return 1;
-    }
-
-    printf("Aircraft (ID:%i): Estimated Position: N:%.1lf,E:%.1lf\n", request.id, to_km(est_pos_n), to_km(est_pos_e));
-    return 1;
-}
-
-int get_est_pos(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e)
-{
-    Packet_Node *packet_node;
-    
-	// Check if id exists
-	if ((packet_node = get_packet_node(packet_node_head, request.id)) == NULL)
-        return 1;
-
-	const ADSBPacket packet = packet_node->packet;
-
-	// Get v_n, v_e and est pos at time t_request
-	double v_n, v_e, pn_t, pe_t;
-
-	v_n = packet.speed * sin(to_radians(packet.heading));
-	v_e = packet.speed * cos(to_radians(packet.heading));
-
-	pn_t = packet.north + v_n * (request.time - packet.time);
-	pe_t = packet.east + v_e * (request.time - packet.time);
-
-	// Check if pn_t || pe_t is in airspace
-	if(!in_airspace(pn_t, pe_t))
-		return 2;
-
-	// Return pass and set pointers to pos
-	*est_pos_n = pn_t;
-	*est_pos_e = pe_t;
-
-	return 0;
-}
-
-// Checks if point (x, y) -> (pn, pe) is within a 350km radius, return 0 if in airspace, 1 if not
-int in_airspace(double pn, double pe)
-{
-	return ((pn * pn) + (pe * pe)) <= (AIRSPACE_RADIUS * AIRSPACE_RADIUS);
-}
-
 void parse_time_request(Time_Request *request, char *input)
 {
 	int hours, minutes;
@@ -129,7 +78,82 @@ void parse_time_request(Time_Request *request, char *input)
 	}
 }
 
+int handle_est_pos(Time_Request request, Packet_Node *packet_node_head)
+{
+    double est_pos_n, est_pos_e;
+    int ret = get_est_pos(request, packet_node_head, &est_pos_n, &est_pos_e);
+
+    if (ret != 0)
+    {
+        printf("Aircraft (ID:%i) not currently in area of operation\n", request.id);
+        return 1;
+    }
+
+    printf("Aircraft (ID:%i): Estimated Position: N:%.1lf,E:%.1lf\n", request.id, to_km(est_pos_n), to_km(est_pos_e));
+    return 2;
+}
+
+int get_est_pos(Time_Request request, Packet_Node *packet_node_head, double *est_pos_n, double *est_pos_e)
+{
+    Packet_Node *packet_node;
+    
+	// Check if id exists
+	if ((packet_node = get_packet_node(packet_node_head, request.id)) == NULL)
+        return 1;
+
+	double pn_t = get_current_north_pos(request, packet_node);
+	double pe_t = get_current_east_pos(request, packet_node);
+		
+	// Check if pn_t and pe_t is in airspace
+	if(!in_airspace(pn_t, pe_t))
+		return 2;
+
+	// Return pass and set pointers to pos
+	*est_pos_n = pn_t;
+	*est_pos_e = pe_t;
+
+	return 0;
+}
+
 int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head)
 {
-    return 1;
+    printf("Currently tracking %i aircraft\n", get_num_contacts(request, packet_node_head));
+	return 1;
+}
+
+int get_num_contacts(Time_Request request, Packet_Node *packet_node_head)
+{
+	unsigned int tracking = 0;
+	
+	while (packet_node_head)
+	{
+		// Checks if the updated positions of the IDs are in the airspace
+		if (in_airspace(get_current_north_pos(request, packet_node_head), get_current_east_pos(request, packet_node_head)))
+			tracking++;
+		
+		packet_node_head = packet_node_head->next;
+	}
+	return tracking;
+}
+
+double get_current_north_pos(Time_Request request, Packet_Node *packet_node)
+{
+	double v_n = packet_node->packet.speed * sin(to_radians(packet_node->packet.heading));
+	double pn_t = packet_node->packet.north + v_n * (request.time - packet_node->packet.time);
+
+	return pn_t;
+}
+
+double get_current_east_pos(Time_Request request, Packet_Node *packet_node)
+{
+	double v_e = packet_node->packet.speed * cos(to_radians(packet_node->packet.heading));
+	double pe_t = packet_node->packet.east + v_e * (request.time - packet_node->packet.time);
+
+	return pe_t;
+}
+
+// Checks if point (x, y) -> (pn, pe) is within a 350km radius, return 0 if in airspace, 1 if not
+int in_airspace(double pn, double pe)
+{
+	return ((pn * pn) + (pe * pe)) <= (AIRSPACE_RADIUS * AIRSPACE_RADIUS);
 }
