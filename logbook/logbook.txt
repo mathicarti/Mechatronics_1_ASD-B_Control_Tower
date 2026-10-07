@@ -60,11 +60,22 @@ Made new files for readability
 In time_request_helpers.c:
  - handle_est_pos function to clean up case statement
  - handle_num_contacts function that will handle functionality of finding the tracked IDs
-Got est_pos functionality fully working
+Got est_pos functionality fully working!!
 
 Working on functions:
- - int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head); to make case statement cleaner and print result
- - int get_num_contacts(Time_Request request, Packet_Node *packet_node_head); to indentify current IDs in airspace at the time of the request
+ - int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head); to make case statement 
+ cleaner and print result
+ - int get_num_contacts(Time_Request request, Packet_Node *packet_node_head); to indentify current IDs 
+ in airspace at the time of the request
  - Created double get_current_north_pos(Time_Request request, Packet_Node *packet_node); and
  double get_current_east_pos(Time_Request request, Packet_Node *packet_node); as they have reused code in est_pos and
  num_contacts. They return the north of south position at a time specified by the request.
+Got num_contacts functionality fully working!!
+
+Cleaned up the code:
+ - Merged get_current_north_pos and get_current_east_pos into single void estimate_position(Time_Request request, 
+ Packet_Node *packet_node, double *north_pos, double *east_pos); it has more efficient calculations & easier to read :) 
+ - Made parse_time_request easier to follow with better variable names and switch cases instead of if statements
+ - Changed handle_est_pos() and handle_num_contacts() to void as I didn't know you could still return; in a void...
+ - Used a for loop in get_num_contacts() as its neater
+ 

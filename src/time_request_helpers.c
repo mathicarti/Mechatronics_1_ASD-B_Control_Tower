@@ -41,119 +41,109 @@ void parse_time_request(Time_Request *request, char *input)
 	int hours, minutes;
 
 	char *token = strtok(input, ",");
-	int i = 0;
+	int field_index = 0;
 
 	while (token != NULL)
 	{
-		if (i == 0)
+		switch (field_index)
 		{
-			sscanf(token, "*time:%d:%d,", &hours, &minutes);
-			request->time = convert_to_time(hours, minutes);
+			case 0:
+				sscanf(token, "*time:%d:%d,", &hours, &minutes);
+				request->time = convert_to_time(hours, minutes);
+				break;
+
+			case 1:
+				if (!strcmp(token, "close"))
+					request->request_ID = CLOSING;
+				else if (!strcmp(token, "est_pos"))
+					request->request_ID = EST_POS;
+				else if (!strcmp(token, "num_contacts"))
+					request->request_ID = NUM_CONTACTS;
+				else if (!strcmp(token, "check_separation"))
+					request->request_ID = CHECK_SEPARATION;
+				else
+					request->request_ID = UNDEFINED;
+				break;
+			
+			case 2:
+				if (request->request_ID != CLOSING && request->request_ID != NUM_CONTACTS)
+					request->id = atoi(token);				
+				break;
+
+			case 3:
+				if (request->request_ID == CHECK_SEPARATION)
+					request->minimum_sep_distance = (double) atof(token);
+				break;
 		}
-		else if (i == 1)
-		{
-			if (!strcmp(token, "close"))
-				request->request_ID = CLOSING;
-
-			else if (!strcmp(token, "est_pos"))
-				request->request_ID = EST_POS;
-
-			else if (!strcmp(token, "num_contacts"))
-				request->request_ID = NUM_CONTACTS;
-
-			else if (!strcmp(token, "check_separation"))
-				request->request_ID = CHECK_SEPARATION;
-
-			else
-				request->request_ID = UNDEFINED;
-		}
-		else if (i == 2 && request->request_ID != CLOSING && request->request_ID != NUM_CONTACTS)
-			request->id = atoi(token);
-
-		else if (i == 3 && request->request_ID == CHECK_SEPARATION)
-			request->minimum_sep_distance = (double) atof(token);
-
-		i++;
+		field_index++;
 		token = strtok(NULL, ",");
 	}
 }
 
-int handle_est_pos(Time_Request request, Packet_Node *packet_node_head)
+void handle_est_pos(Time_Request request, Packet_Node *packet_node_head)
 {
-    double est_pos_n, est_pos_e;
-    int ret = get_est_pos(request, packet_node_head, &est_pos_n, &est_pos_e);
+    double north_pos, east_pos;
+    int ret = get_est_pos(request, packet_node_head, &north_pos, &east_pos);
 
     if (ret != 0)
     {
         printf("Aircraft (ID:%i) not currently in area of operation\n", request.id);
-        return 1;
+        return;
     }
 
-    printf("Aircraft (ID:%i): Estimated Position: N:%.1lf,E:%.1lf\n", request.id, to_km(est_pos_n), to_km(est_pos_e));
-    return 2;
+    printf("Aircraft (ID:%i): Estimated Position: N:%.1lf,E:%.1lf\n", request.id, to_km(north_pos), to_km(east_pos));
+    return;
 }
 
-int get_est_pos(Time_Request request, Packet_Node *packet_node_head, double *est_pos_n, double *est_pos_e)
+int get_est_pos(Time_Request request, Packet_Node *packet_node_head, double *north_pos, double *east_pos)
 {
-    Packet_Node *packet_node;
+    Packet_Node *packet_node = get_packet_node(packet_node_head, request.id);
     
 	// Check if id exists
-	if ((packet_node = get_packet_node(packet_node_head, request.id)) == NULL)
+	if (packet_node == NULL)
         return 1;
 
-	double pn_t = get_current_north_pos(request, packet_node);
-	double pe_t = get_current_east_pos(request, packet_node);
-		
-	// Check if pn_t and pe_t is in airspace
-	if(!in_airspace(pn_t, pe_t))
+	estimate_position(request, packet_node, north_pos, east_pos);
+	
+	if(!in_airspace(*north_pos, *east_pos))
 		return 2;
-
-	// Return pass and set pointers to pos
-	*est_pos_n = pn_t;
-	*est_pos_e = pe_t;
 
 	return 0;
 }
 
-int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head)
+void handle_num_contacts(Time_Request request, Packet_Node *packet_node_head)
 {
     printf("Currently tracking %i aircraft\n", get_num_contacts(request, packet_node_head));
-	return 1;
 }
 
 int get_num_contacts(Time_Request request, Packet_Node *packet_node_head)
 {
 	unsigned int tracking = 0;
-	
-	while (packet_node_head)
+
+	for (Packet_Node *cursor = packet_node_head; cursor != NULL; cursor = cursor->next)
 	{
-		// Checks if the updated positions of the IDs are in the airspace
-		if (in_airspace(get_current_north_pos(request, packet_node_head), get_current_east_pos(request, packet_node_head)))
+		double north_pos, east_pos;
+		estimate_position(request, cursor, &north_pos, &east_pos);
+
+		if (in_airspace(north_pos, east_pos))
 			tracking++;
-		
-		packet_node_head = packet_node_head->next;
 	}
 	return tracking;
 }
 
-double get_current_north_pos(Time_Request request, Packet_Node *packet_node)
+void estimate_position(Time_Request request, Packet_Node *packet_node, double *north_pos, double *east_pos)
 {
-	double v_n = packet_node->packet.speed * sin(to_radians(packet_node->packet.heading));
-	double pn_t = packet_node->packet.north + v_n * (request.time - packet_node->packet.time);
+	const double dt_seconds = request.time - packet_node->packet.time;
+	const double heading_rad = to_radians(packet_node->packet.heading);
 
-	return pn_t;
+	double north_vel = packet_node->packet.speed * sin(heading_rad);
+	double east_vel = packet_node->packet.speed * cos(heading_rad);
+	
+	*north_pos = packet_node->packet.north + north_vel * dt_seconds;
+	*east_pos = packet_node->packet.east + east_vel * dt_seconds;
 }
 
-double get_current_east_pos(Time_Request request, Packet_Node *packet_node)
+int in_airspace(double north_pos, double east_pos)
 {
-	double v_e = packet_node->packet.speed * cos(to_radians(packet_node->packet.heading));
-	double pe_t = packet_node->packet.east + v_e * (request.time - packet_node->packet.time);
-
-	return pe_t;
-}
-
-// Checks if point (x, y) -> (pn, pe) is within a 350km radius, return 0 if in airspace, 1 if not
-int in_airspace(double pn, double pe)
-{
-	return ((pn * pn) + (pe * pe)) <= (AIRSPACE_RADIUS * AIRSPACE_RADIUS);
+	return ((north_pos * north_pos) + (east_pos * east_pos)) <= (AIRSPACE_RADIUS * AIRSPACE_RADIUS);
 }

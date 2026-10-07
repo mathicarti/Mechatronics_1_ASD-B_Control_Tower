@@ -44,7 +44,7 @@ double to_m(double km);
 double to_km(double m);
 double to_radians(double deg);
 
-void parse_time_request(Time_Request *request, char *input);
+void handle_ADSB_packet(char *input, Packet_Node **packet_node_head);
 void parse_ADSB_request(ADSBPacket *packet, const char *input);
 
 void add_packet_node(const ADSBPacket packet, Packet_Node **packet_node_head);
@@ -52,16 +52,15 @@ void free_packet_node(Packet_Node *packet_node_head);
 Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id);
 
 int handle_time_request(char *input, Packet_Node *packet_node_head);
-void handle_ADSB_packet(char *input, Packet_Node **packet_node_head);
+void parse_time_request(Time_Request *request, char *input);
 
-int handle_est_pos(Time_Request request, Packet_Node *packet_node_head);
-int get_est_pos(Time_Request request, Packet_Node *packet_node_head, double *est_pos_n, double *est_pos_e);
+void handle_est_pos(Time_Request request, Packet_Node *packet_node_head);
+int get_est_pos(Time_Request request, Packet_Node *packet_node_head, double *north_pos, double *east_pos);
 
-int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head);
+void handle_num_contacts(Time_Request request, Packet_Node *packet_node_head);
 int get_num_contacts(Time_Request request, Packet_Node *packet_node_head);
 
-double get_current_north_pos(Time_Request request, Packet_Node *packet_node);
-double get_current_east_pos(Time_Request request, Packet_Node *packet_node);
-int in_airspace(double pn, double pe);
+void estimate_position(Time_Request request, Packet_Node *packet_node, double *north_pos, double *east_pos);
+int in_airspace(double north_pos, double east_pos);
 
 #endif
