@@ -1,0 +1,16 @@
+#ADS-B:7863,time:05:24,N:224.3,E:267.3,alt:8000,head:159.9,speed:270.0
+#ADS-B:7863,time:05:31,N:263.3,E:160.8,alt:8000,head:159.9,speed:270.0
+#ADS-B:7863,time:05:38,N:302.2,E:54.3,alt:8000,head:159.9,speed:270.0
+#ADS-B:6234,time:05:39,N:246.8,E:-246.8,alt:6500,head:-37.5,speed:200.0
+#ADS-B:7863,time:05:45,N:341.2,E:-52.2,alt:8000,head:159.9,speed:270.0
+#ADS-B:6234,time:05:46,N:195.7,E:-180.2,alt:6500,head:-37.5,speed:200.0
+#ADS-B:6234,time:05:53,N:144.5,E:-113.5,alt:6500,head:-37.5,speed:200.0
+#ADS-B:6234,time:06:00,N:93.4,E:-46.9,alt:6500,head:-37.5,speed:200.0
+#ADS-B:6234,time:06:07,N:42.3,E:19.8,alt:6500,head:-37.5,speed:200.0
+#ADS-B:6234,time:06:14,N:-8.9,E:86.4,alt:6500,head:-37.5,speed:200.0
+*time:06:16,est_pos,6234
+*time:06:16,est_pos,7863
+#ADS-B:6234,time:06:21,N:-60.0,E:153.1,alt:6500,head:-37.5,speed:200.0
+#ADS-B:6234,time:06:28,N:-111.2,E:219.7,alt:6500,head:-37.5,speed:200.0
+#ADS-B:6234,time:06:35,N:-162.3,E:286.3,alt:6500,head:-37.5,speed:200.0
+*time:06:36,close

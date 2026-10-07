@@ -73,8 +73,9 @@ Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id)
 int convert_to_time(const int hours, const int minutes)
 {
 	double total_minutes = hours * 60 + minutes;
+	int total_seconds = total_minutes * 60;
 
-	return total_minutes;
+	return total_seconds;
 }
 
 double to_m(double km)

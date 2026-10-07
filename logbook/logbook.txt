@@ -60,3 +60,5 @@ Made new files for readability
 In time_request_helpers.c:
  - handle_est_pos function to clean up case statement
  - handle_num_contacts function that will handle functionality of finding the tracked IDs
+
+Got est_pos functionality fully working

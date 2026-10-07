@@ -3,7 +3,7 @@
 
 #define INPUT_BUFFER_SIZE 1024
 #define PI 3.141592653589793
-#define AIRSPACE_RADIUS 3500000.0
+#define AIRSPACE_RADIUS 350000.0
 
 typedef struct 
 {

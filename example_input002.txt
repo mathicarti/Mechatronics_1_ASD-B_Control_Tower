@@ -1,3 +1,5 @@
 #ADS-B:7285,time:09:24,N:187.0,E:187.4,alt:8000,head:-155.0,speed:210.0
+#ADS-B:6,time:09:37,N:-98.4,E:203.0,alt:6500,head:-37.5,speed:270.0
 *time:09:25,est_pos,7285
+*time:09:39,num_contacts
 *time:10:07,close

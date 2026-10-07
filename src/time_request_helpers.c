@@ -17,12 +17,12 @@ int handle_time_request(char *input, Packet_Node *packet_node_head)
             return 1;
         
         case EST_POS:
-            if (handle_est_pos(request, packet_node_head)) 
-                break;
+            handle_est_pos(request, packet_node_head);
+            break;
         
         case NUM_CONTACTS:
-            if (handle_num_contacts(request, packet_node_head))
-                break;
+            handle_num_contacts(request, packet_node_head);
+            break;
 
         case CHECK_SEPARATION:
             printf("Not done\n");
@@ -71,7 +71,7 @@ int get_est_pos(Packet_Node *packet_node_head, Time_Request request, double *est
 	pe_t = packet.east + v_e * (request.time - packet.time);
 
 	// Check if pn_t || pe_t is in airspace
-	if(in_airspace(pn_t, pe_t))
+	if(!in_airspace(pn_t, pe_t))
 		return 2;
 
 	// Return pass and set pointers to pos
@@ -79,6 +79,12 @@ int get_est_pos(Packet_Node *packet_node_head, Time_Request request, double *est
 	*est_pos_e = pe_t;
 
 	return 0;
+}
+
+// Checks if point (x, y) -> (pn, pe) is within a 350km radius, return 0 if in airspace, 1 if not
+int in_airspace(double pn, double pe)
+{
+	return ((pn * pn) + (pe * pe)) <= (AIRSPACE_RADIUS * AIRSPACE_RADIUS);
 }
 
 void parse_time_request(Time_Request *request, char *input)
@@ -121,12 +127,6 @@ void parse_time_request(Time_Request *request, char *input)
 		i++;
 		token = strtok(NULL, ",");
 	}
-}
-
-// Checks if point (x, y) -> (pn, pe) is within a 350km radius, return 0 if in airspace, 1 if not
-int in_airspace(double pn, double pe)
-{
-	return ((pn * pn) + (pe * pe)) > (AIRSPACE_RADIUS * AIRSPACE_RADIUS);
 }
 
 int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head)
