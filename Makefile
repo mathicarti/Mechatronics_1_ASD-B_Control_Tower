@@ -8,7 +8,7 @@ OBJ_DIR = build
 INC_DIR = include
 # you may need to put your extra files here
 _DEPS = message.h
-_OBJS = main.o
+_OBJS = main.o ADSB_packet_helpers.o time_request_helpers.o
 
 DEPS = $(patsubst %,$(INC_DIR)/%,$(_DEPS))
 OBJS = $(patsubst %,$(OBJ_DIR)/%,$(_OBJS))

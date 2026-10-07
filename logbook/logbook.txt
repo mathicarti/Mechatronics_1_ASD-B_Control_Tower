@@ -44,6 +44,19 @@ Implemented functions for est_pos namely:
  - double to_radians(double deg), which converts degrees t radians for the sin() cos()
  - int in_airspace(double pn, double pe), which checks if a position (north, east) is within a defined radius
  returns 0 if within airspace, > 0 if not within airspace
- - int get_est_position(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e),
+ - int get_est_pos(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e),
  which returns 0 if the ID was found and is in the airspace and will set the two pointers est_pos_n, est_pos_e to their
  respective updated north and east postion. Returns > 0 if ID not found or not in airspace.
+
+Wednesday 7/10/26:
+To standardised calculations to m/s:
+ - Changed function convert_time to get seconds from midnight not minutes.
+ - Also created double to_m(double km) to convert m to km and vice versa with double to_km(double m).
+
+Made new files for readability
+ - ADSB_packet_helpers.c: All the functions related to processing ADSB data
+ - time_request_helpers.c: All the functions related to processing *time request
+
+In time_request_helpers.c:
+ - handle_est_pos function to clean up case statement
+ - handle_num_contacts function that will handle functionality of finding the tracked IDs

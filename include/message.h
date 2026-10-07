@@ -3,7 +3,7 @@
 
 #define INPUT_BUFFER_SIZE 1024
 #define PI 3.141592653589793
-#define AIRSPACE_RADIUS 350000.0
+#define AIRSPACE_RADIUS 3500000.0
 
 typedef struct 
 {
@@ -40,17 +40,24 @@ typedef struct
 } Time_Request;
 
 int convert_to_time(const int hours, const int minutes);
+double to_m(double km);
+double to_km(double m);
+double to_radians(double deg);
 
 void parse_time_request(Time_Request *request, char *input);
 void parse_ADSB_request(ADSBPacket *packet, const char *input);
 
 void add_packet_node(const ADSBPacket packet, Packet_Node **packet_node_head);
 void free_packet_node(Packet_Node *packet_node_head);
-
 Packet_Node *get_packet_node(Packet_Node *packet_node_head, int id);
 
-double to_radians(double deg);
+int handle_time_request(char *input, Packet_Node *packet_node_head);
+void handle_ADSB_packet(char *input, Packet_Node **packet_node_head);
+
+int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head);
+
+int handle_est_pos(Time_Request request, Packet_Node *packet_node_head);
+int get_est_pos(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e);
 int in_airspace(double pn, double pe);
-int get_est_position(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e);
 
 #endif
