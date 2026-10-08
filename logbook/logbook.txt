@@ -79,3 +79,15 @@ Cleaned up the code:
  - Changed handle_est_pos() and handle_num_contacts() to void as I didn't know you could still return; in a void...
  - Used a for loop in get_num_contacts() as its neater
  
+Thursday 8/10/26:
+Added usefull math and prediction functions for the separation distance
+ - int solve_quadratic(double a, double b, double c, double *root_1, double *root_2); to solve quadratics
+ - void handle_check_separation(Time_Request request, Packet_Node *packet_node_head); 
+ Prints the correct output corresponding to the logic
+ - int find_first_separation_issue(Packet_Node *packet_node_head, ADSBPacket packet, int t_check, 
+ double minimum_sep_distance, double *dt_issue); Returns 1 when found the minium delta time from collition between 
+ two planes. returns 0 if no issues found.
+ - int check_pair_for_issue(int t_check, ADSBPacket a, ADSBPacket b, double minimum_sep_distance, double *dt_issue); 
+ Checks if there will be a collition between two planes.
+ - Simplified estimate_position(int t_check, ADSBPacket packet, double *north_pos, double *east_pos) so it could be 
+ more widely used
