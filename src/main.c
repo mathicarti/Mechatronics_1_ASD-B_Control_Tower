@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "message.h"
 
@@ -94,20 +95,21 @@ double to_radians(double deg)
 
 int solve_quadratic(double a, double b, double c, double *root_1, double *root_2)
 {
-	// Obtain determinant
-	double det = (b*b) - (4*a*c);
-
-	// Obtain roots
-	if (det > 0)
-	{
-		*root_1 = -(b + sqrt(det)) / (2 * a);
-		*root_2 = -(b - sqrt(det)) / (2 * a);
-	}
-	else if (det = 0)
-	{
-		*root_1 = -b / (2 * a);
-		*root_2 = *root_1;
-	}
-	else if (det < 0)
+	// Check for relative motion
+	if (a == 0)
 		return 0;
+	
+	// Obtain determinant
+	double det = b * b - 4 * a * c;
+
+	if (det < 0)
+		return 0;
+	
+	// Obtain roots
+	double s = sqrt(det);
+
+	*root_1 = (-b - s) / (2 * a);
+	*root_2 = (-b + s) / (2 * a);
+
+	return det == 0 ? 1 : 2;
 }

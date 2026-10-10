@@ -71,7 +71,7 @@ void parse_time_request(Time_Request *request, char *input)
 
 			case 3:
 				if (request->request_ID == CHECK_SEPARATION)
-					request->minimum_sep_distance = (double) atof(token);
+					request->minimum_sep_distance = to_m((double) atof(token));
 				break;
 		}
 		field_index++;
@@ -133,77 +133,66 @@ int get_num_contacts(int t_check, Packet_Node *packet_node_head)
 void handle_check_separation(Time_Request request, Packet_Node *packet_node_head)
 {
 	Packet_Node *packet_node = get_packet_node(packet_node_head, request.id);
+	double north_pos, east_pos;
 	
 	if (packet_node)
+		estimate_position(request.time, packet_node->packet, &north_pos, &east_pos);
+	
+	if (!packet_node || !in_airspace(north_pos, east_pos))
 	{
 		printf("Aircraft (ID:%i) not currently in area of operation\n", request.id);
 		return;
 	}
-
-	double north_pos, east_pos;
-	estimate_position(request.time, packet_node->packet, &north_pos, &east_pos);
-
-	if (in_airspace(north_pos, east_pos))
-	{
-		printf("Aircraft (ID:%i) not currently in area of operation\n", request.id);
-		return;
-	}
-
 	double dt_issue;
-	int res = find_first_separation_issue(packet_node_head, packet_node->packet, request.time, request.minimum_sep_distance, &dt_issue);
 
-	if (!res)
+	if (!find_first_separation_issue(packet_node_head, packet_node->packet, (double) request.time, request.minimum_sep_distance, &dt_issue))
 	{
 		printf("No separation issues\n");
+		return;
 	}
+	estimate_position(request.time + dt_issue, packet_node->packet, &north_pos, &east_pos);
 
-	estimate_position((request.time + dt_issue), packet_node->packet, &north_pos, &east_pos);
-
-	printf("Separation issue: N:%i,E:%i", north_pos, east_pos);
+	if (in_airspace(north_pos, east_pos))
+		printf("Separation issue: N:%.1lf,E:%.1lf\n", to_km(north_pos), to_km(east_pos));
+	
+	else
+		printf("No separation issues\n");
 }
 
-int find_first_separation_issue(Packet_Node *packet_node_head, ADSBPacket packet, int t_check, double minimum_sep_distance, double *dt_issue)
+int find_first_separation_issue(Packet_Node *packet_node_head, ADSBPacket packet, double t_check, double minimum_sep_distance, double *dt_issue)
 {
-	double min_dt_issue = -1;
-	int min_dt_id;
+	int found = 0;
+	double min_dt_issue = 0;
 
-	while (packet_node_head)
+	for (Packet_Node *cursor = packet_node_head; cursor != NULL; cursor = cursor->next)
 	{
-		if (packet_node_head->packet.id == packet.id) 
-		{
-			packet_node_head = packet_node_head->next;
-			continue;
-		}
-		int res = check_pair_for_issue(t_check, packet, packet_node_head->packet, minimum_sep_distance, dt_issue);
-
-		if (res = 0)
+		if (cursor->packet.id == packet.id)
 			continue;
 
-		if (min_dt_issue == -1) 
-		{
-			min_dt_issue = *dt_issue;
-			min_dt_id = packet_node_head->packet.id;
-		}
-		else if (*dt_issue < min_dt_issue)
-		{
-			min_dt_issue = *dt_issue;
-			min_dt_id = packet_node_head->packet.id;
-		}
-		packet_node_head = packet_node_head->next;
-	}
-	if (min_dt_issue == -1)
-	{
-		return 0;
-	}
+		double north_pos, east_pos;
+		
+		estimate_position(t_check, cursor->packet, &north_pos, &east_pos);
+		if (!in_airspace(north_pos, east_pos))
+			continue;
 
-	min_dt_issue = *dt_issue;
-	return 1;
+		double dt_issue_pair;
+
+		if (check_pair_for_issue(t_check, packet, cursor->packet, minimum_sep_distance, &dt_issue_pair) 
+			&& (!found || dt_issue_pair < min_dt_issue))
+		{
+			min_dt_issue = dt_issue_pair;
+			found = 1;
+		}
+	}
+	if (found)
+		*dt_issue = min_dt_issue;
+	return found;
 }
 
-int check_pair_for_issue(int t_check, ADSBPacket a, ADSBPacket b, double minimum_sep_distance, double *dt_issue)
+int check_pair_for_issue(double t_check, ADSBPacket a, ADSBPacket b, double minimum_sep_distance, double *dt_issue)
 {
 	// Altitude Check
-	if (abs(a.altitude - b.altitude) > minimum_sep_distance)
+	if (abs(a.altitude - b.altitude) > MAX_ALT_DIFF_M)
 		return 0;
 
 	double a_north_pos, a_east_pos, a_north_vel, a_east_vel;
@@ -216,50 +205,27 @@ int check_pair_for_issue(int t_check, ADSBPacket a, ADSBPacket b, double minimum
 	compute_velocity(b, &b_north_vel, &b_east_vel);
 
 	double dt_north_pos = b_north_pos - a_north_pos;
-	double dt_east_pos = b_east_pos - b_east_pos;
+	double dt_east_pos = b_east_pos - a_east_pos;
 	double dt_north_vel = b_north_vel - a_north_vel;
 	double dt_east_vel = b_east_vel - a_east_vel;
 
-	double root_1, root_2;
 	double quad_a = (dt_north_vel * dt_north_vel) + (dt_east_vel * dt_east_vel);
 	double quad_b = 2 * ((dt_north_vel * dt_north_pos) + (dt_east_vel * dt_east_pos));
 	double quad_c = (dt_north_pos * dt_north_pos) + (dt_east_pos * dt_east_pos) - (minimum_sep_distance * minimum_sep_distance);
-
+	
+	double root_1, root_2;
 	int real_roots = solve_quadratic(quad_a, quad_b, quad_c, &root_1, &root_2);
 
-	switch (real_roots)
-	{
-		case 0:
-			return 0;
+	// Never in range, or time in the past
+	if (real_roots == 0 || root_2 < 0)
+		return 0;
 
-		case 1:
-			// In range in the past
-			if (root_1 < 0)
-				// Never in range
-				return 0;
-			// Upcoming collision
-			else
-			{
-				*dt_issue = t_check - root_1;
-				return 1;
-			}
-		case 2:
-			// Currently within range
-			if ((root_1 > 0 && root_2 < 0) || (root_1 < 0 && root_2 > 0))
-			{
-				*dt_issue = root_1 > root_2 ? t_check - root_1 : t_check - root_2;
-				return 2;
-			}
-			// Upcoming collision
-			else if (root_1 > 0 && root_2 > 0)
-			{
-				*dt_issue = root_1 < root_2 ? t_check - root_1 : t_check - root_2;
-				return 3;
-			}
-	}
+	// root_1 < 0 <= root_2 already in range
+	*dt_issue = (root_1 < 0) ? 0 : root_1;
+	return 1;
 }
 
-void estimate_position(int t_check, ADSBPacket packet, double *north_pos, double *east_pos)
+void estimate_position(double t_check, ADSBPacket packet, double *north_pos, double *east_pos)
 {
 	const double dt_seconds = t_check - packet.time;
 	double north_vel, east_vel;

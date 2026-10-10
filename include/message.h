@@ -4,6 +4,7 @@
 #define INPUT_BUFFER_SIZE 1024
 #define PI 3.141592653589793
 #define AIRSPACE_RADIUS 350000.0
+#define MAX_ALT_DIFF_M 750
 
 typedef struct 
 {
@@ -62,10 +63,10 @@ void handle_num_contacts(Time_Request request, Packet_Node *packet_node_head);
 int get_num_contacts(int t_check, Packet_Node *packet_node_head);
 
 void handle_check_separation(Time_Request request, Packet_Node *packet_node_head);
-int find_first_separation_issue(Packet_Node *packet_node_head, ADSBPacket packet, int t_check, double minimum_sep_distance, double *dt_issue);
-int check_pair_for_issue(int t_check, ADSBPacket a, ADSBPacket b, double minimum_sep_distance, double *dt_issue);
+int find_first_separation_issue(Packet_Node *packet_node_head, ADSBPacket packet, double t_check, double minimum_sep_distance, double *dt_issue);
+int check_pair_for_issue(double t_check, ADSBPacket a, ADSBPacket b, double minimum_sep_distance, double *dt_issue);
 
-void estimate_position(int t_check, ADSBPacket packet, double *north_pos, double *east_pos);
+void estimate_position(double t_check, ADSBPacket packet, double *north_pos, double *east_pos);
 void compute_velocity(ADSBPacket packet, double *north_vel, double *east_vel);
 int in_airspace(double north_pos, double east_pos);
 

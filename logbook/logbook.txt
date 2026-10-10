@@ -46,7 +46,7 @@ Implemented functions for est_pos namely:
  returns 0 if within airspace, > 0 if not within airspace
  - int get_est_pos(Packet_Node *packet_node_head, Time_Request request, double *est_pos_n, double *est_pos_e),
  which returns 0 if the ID was found and is in the airspace and will set the two pointers est_pos_n, est_pos_e to their
- respective updated north and east postion. Returns > 0 if ID not found or not in airspace.
+ respective updated north and east position. Returns > 0 if ID not found or not in airspace.
 
 Wednesday 7/10/26:
 To standardised calculations to m/s:
@@ -65,7 +65,7 @@ Got est_pos functionality fully working!!
 Working on functions:
  - int handle_num_contacts(Time_Request request, Packet_Node *packet_node_head); to make case statement 
  cleaner and print result
- - int get_num_contacts(Time_Request request, Packet_Node *packet_node_head); to indentify current IDs 
+ - int get_num_contacts(Time_Request request, Packet_Node *packet_node_head); to identify current IDs 
  in airspace at the time of the request
  - Created double get_current_north_pos(Time_Request request, Packet_Node *packet_node); and
  double get_current_east_pos(Time_Request request, Packet_Node *packet_node); as they have reused code in est_pos and
@@ -80,14 +80,32 @@ Cleaned up the code:
  - Used a for loop in get_num_contacts() as its neater
  
 Thursday 8/10/26:
-Added usefull math and prediction functions for the separation distance
+Added useful math and prediction functions for the separation distance
  - int solve_quadratic(double a, double b, double c, double *root_1, double *root_2); to solve quadratics
  - void handle_check_separation(Time_Request request, Packet_Node *packet_node_head); 
  Prints the correct output corresponding to the logic
  - int find_first_separation_issue(Packet_Node *packet_node_head, ADSBPacket packet, int t_check, 
- double minimum_sep_distance, double *dt_issue); Returns 1 when found the minium delta time from collition between 
+ double minimum_sep_distance, double *dt_issue); Returns 1 when found the minium delta time from collision between 
  two planes. returns 0 if no issues found.
  - int check_pair_for_issue(int t_check, ADSBPacket a, ADSBPacket b, double minimum_sep_distance, double *dt_issue); 
- Checks if there will be a collition between two planes.
+ Checks if there will be a collision between two planes.
  - Simplified estimate_position(int t_check, ADSBPacket packet, double *north_pos, double *east_pos) so it could be 
  more widely used
+
+Saturday 10/10/26:
+Debugging separation_issue pat of the program:
+ - Typo in double dt_east_pos = b_east_pos - a_east_pos; was double dt_east_pos = b_east_pos - b_east_pos; 
+ which would always be zero
+ - Compared altitude to the minimum_sep_distance when it should have been a constant MAX_ALT_DIFF_M
+ - *dt_issue = root_1; was *dt_issue = t_check - root_1; which is wrong as the root already incorporates t_check 
+ in its calculation
+ - solve_quadratic(...) if a == 0, then division by 0 would occur, added guardrails for it
+ - request->minimum_sep_distance = (double) atof(token); would lead to comparing km and m, fixed: 
+ request->minimum_sep_distance = to_m((double) atof(token));
+ - Changed the while loops that checks for issues to a for loop to simplify the logic when using continue
+ - Changed find_first_separation_issue(...) to use a buffer for dt_issue to not write unwanted values when returning 0
+ - Changed solve_quadratic(...) so if roots exists than root_1 would always be the smaller one of the two. 
+ Simplified check_pair_for_issue(...) as a result.
+ - Simplified handle_check_separation(...)
+ - time was not as exact as I would add a double to an int reducing accuracy 
+ (done many times it changed the result by a couple 100 metres)
